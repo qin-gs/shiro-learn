@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@DisplayName("authentication")
+@DisplayName("authentication 验证")
 public class AuthenticationTest {
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationTest.class);
