@@ -27,6 +27,19 @@
             <version>5.7.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- Shiro uses SLF4J for logging.  We'll use the 'simple' binding
+                 in this example app.  See http://www.slf4j.org for more info. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>${slf4j-version}</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
@@ -35,18 +48,6 @@
                 <groupId>org.apache.shiro</groupId>
                 <artifactId>shiro-core</artifactId>
                 <version>${shiro-version}</version>
-            </dependency>
-            <!-- Shiro uses SLF4J for logging.  We'll use the 'simple' binding
-                 in this example app.  See http://www.slf4j.org for more info. -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${slf4j-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jcl-over-slf4j</artifactId>
-                <version>${slf4j-version}</version>
             </dependency>
 
             <dependency>

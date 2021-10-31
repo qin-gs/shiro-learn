@@ -44,7 +44,7 @@ public class ShiroLoginFilter extends FormAuthenticationFilter {
         Object principal = subject.getPrincipals().getPrimaryPrincipal();
         // 登录成功后可以设置一些属性
         session.setAttribute("login_time", Instant.now().toEpochMilli());
-        response.getWriter().println("登录成功");
+        response.getWriter().println("login success filter 成功");
         return false;
     }
 
@@ -62,12 +62,12 @@ public class ShiroLoginFilter extends FormAuthenticationFilter {
             if (((int) session.getAttribute(LOGIN_FAILED_NUM)) >= LOGIN_FAILED_MAX_NUM) {
                 session.setAttribute(VERIFY_CODE, getVerifyCode());
             }
-            response.getWriter().println("登录失败");
+            response.getWriter().println("login failed filter");
             return super.onLoginFailure(token, e, request, response);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class ShiroLoginFilter extends FormAuthenticationFilter {
                 return executeLogin(request, response);
             }
         }
-        return false;
+        return true;
     }
 
     private String getVerifyCode() {

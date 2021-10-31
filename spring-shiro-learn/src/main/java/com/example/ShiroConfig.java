@@ -12,6 +12,7 @@ import org.apache.shiro.session.mgt.eis.SessionDAO;
 import org.apache.shiro.session.mgt.eis.SessionIdGenerator;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +31,9 @@ public class ShiroConfig {
 
     @Bean
     public AuthorizingRealm authorizingRealm() {
-        return new ShiroRealm();
+        ShiroRealm realm = new ShiroRealm();
+        realm.setCredentialsMatcher(credentialsMatcher());
+        return realm;
     }
 
     @Bean
@@ -49,14 +52,29 @@ public class ShiroConfig {
 
     @Bean
     public DefaultSecurityManager securityManager() {
-        DefaultSecurityManager manager = new DefaultSecurityManager();
+        DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
         manager.setRealm(authorizingRealm());
         manager.setSessionManager(sessionManager());
         return manager;
     }
 
+    /**
+     * 与spring集成的时候需要在web.xml中配置这个东西
+     * <pre>
+     * &lt;bean id="<b>myCustomFilter</b>" class="com.class.that.implements.javax.servlet.Filter"/&gt;
+     * ...
+     * &lt;bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean"&gt;
+     *    ...
+     *    &lt;property name="filterChainDefinitions"&gt;
+     *        &lt;value&gt;
+     *            /some/path/** = authc, <b>myCustomFilter</b>
+     *        &lt;/value&gt;
+     *    &lt;/property&gt;
+     * &lt;/bean&gt;
+     * </pre>
+     */
     @Bean
-    public ShiroFilterFactoryBean shiroFilterFactoryBean() {
+    public ShiroFilterFactoryBean shiroFilter() {
         ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
         bean.setSecurityManager(securityManager());
         // 注册过滤器
@@ -69,11 +87,11 @@ public class ShiroConfig {
                 new String[]{
                         "/login", "shiroLoginFilter",
                         "/logout", "shiroLogoutFilter",
-                        "/login/getVerifyCode", "anno",
-                        "/css/**", "anno",
-                        "/img/**", "anno",
-                        "/javascript/**", "anno",
-                        "/error/**", "anno",
+                        "/login/getVerifyCode", "anon",
+                        "/css/**", "anon",
+                        "/img/**", "anon",
+                        "/javascript/**", "anon",
+                        "/error/**", "anon",
                         "/**", "authc"
                 });
         bean.setLoginUrl("/login");
@@ -97,10 +115,16 @@ public class ShiroConfig {
     }
 
     @Bean
-    public HashedCredentialsMatcher hashedCredentialsMatcher() {
-        return new ShiroCredentialsMatcher();
+    public HashedCredentialsMatcher credentialsMatcher() {
+        ShiroCredentialsMatcher matcher = new ShiroCredentialsMatcher();
+        matcher.setHashAlgorithmName("md5");
+        matcher.setHashIterations(2);
+        return matcher;
     }
 
+    /**
+     * 通过aop实现对注解的支持
+     */
     @Bean
     public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor() {
         AuthorizationAttributeSourceAdvisor advisor = new AuthorizationAttributeSourceAdvisor();

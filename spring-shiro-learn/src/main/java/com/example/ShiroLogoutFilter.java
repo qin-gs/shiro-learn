@@ -17,7 +17,7 @@ public class ShiroLogoutFilter extends LogoutFilter {
         logger.info("退出登录");
         Subject subject = SecurityUtils.getSubject();
         subject.logout();
-        response.getWriter().println("退出成功");
+        response.getWriter().println("logout success filter");
         return false;
     }
 }
