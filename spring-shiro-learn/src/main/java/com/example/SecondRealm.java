@@ -10,12 +10,11 @@ import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.util.ByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.LifecycleProcessor;
 
 import java.util.List;
 import java.util.Map;
 
-public class ShiroRealm extends AuthorizingRealm {
+public class SecondRealm extends AuthorizingRealm {
 
     protected Logger logger = LoggerFactory.getLogger(ShiroRealm.class);
 
@@ -24,7 +23,7 @@ public class ShiroRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        logger.info("first realm 权限信息加载...");
+        logger.info("second realm 权限信息加载...");
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
         // 用户配置，类型不定
         Map<String, String> principal = ((Map<String, String>) principals.getPrimaryPrincipal());
@@ -41,7 +40,7 @@ public class ShiroRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-        logger.info("first 认证");
+        logger.info("second 认证");
         // 拿到用户名去数据库查密码
         String username = (String) token.getPrincipal();
         // 从数据库中获取当前用户的信息, 这里的密码是加密的
@@ -62,18 +61,18 @@ public class ShiroRealm extends AuthorizingRealm {
     private Map<String, String> getUserInfoFromDatabase(String username) {
         return Map.of(
                 "username", username,
-                "password", "00b3187384f2708025074f28764a4a30", // 这个值是123456加密后的结果
+                "password", "gggg", // 这个值是123456加密后的结果
                 "salt", "salt",
                 "age", "21",
                 "address", "China",
                 "permissions", "teacher:update,student:read", // 从数据库中拿到权限
-                "roles", "teacher"
+                "roles", "teacher,student"
         );
     }
 
     public static void main(String[] args) {
         String password = "123456";
-        String algorithm = "md5";
+        String algorithm = "sha1";
         String salt = "salt";
         int iterations = 2;
         SimpleHash hash = new SimpleHash(algorithm, password, salt, iterations);

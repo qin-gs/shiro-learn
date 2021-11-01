@@ -3,6 +3,7 @@ package com.example;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,5 +18,15 @@ public class LoginController {
         // 这个token会被传到 Realm#doGetAuthenticationInfo 方法中
         subject.login(token);
         return "login success";
+    }
+
+    @GetMapping("teacher")
+    public String teacher() {
+        return "teacher";
+    }
+
+    @GetMapping("student")
+    public String student() {
+        return "student";
     }
 }

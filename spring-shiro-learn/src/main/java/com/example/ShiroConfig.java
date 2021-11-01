@@ -2,6 +2,8 @@ package com.example;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
+import org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy;
+import org.apache.shiro.authc.pam.ModularRealmAuthenticator;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.session.SessionListener;
@@ -29,11 +31,42 @@ import java.util.Map;
 @Configuration
 public class ShiroConfig {
 
+    /**
+     * 在这里配置密码的加密方式
+     */
     @Bean
     public AuthorizingRealm authorizingRealm() {
         ShiroRealm realm = new ShiroRealm();
         realm.setCredentialsMatcher(credentialsMatcher());
         return realm;
+    }
+
+    /**
+     * 配置第二个realm
+     */
+    @Bean
+    public AuthorizingRealm secondAuthorizingRealm() {
+        SecondRealm secondRealm = new SecondRealm();
+        HashedCredentialsMatcher credentialsMatcher = new HashedCredentialsMatcher();
+        credentialsMatcher.setHashAlgorithmName("sha1");
+        credentialsMatcher.setHashIterations(2);
+        secondRealm.setCredentialsMatcher(credentialsMatcher);
+        return secondRealm;
+    }
+
+    /**
+     * 认证器，并配置认证策略
+     * <p>
+     * AtLeastOneSuccessfulStrategy
+     * FirstSuccessfulStrategy
+     * AllSuccessfulStrategy
+     */
+    @Bean
+    public ModularRealmAuthenticator realmAuthenticator() {
+        ModularRealmAuthenticator authenticator = new ModularRealmAuthenticator();
+        authenticator.setRealms(List.of(authorizingRealm(), secondAuthorizingRealm()));
+        authenticator.setAuthenticationStrategy(new AtLeastOneSuccessfulStrategy());
+        return authenticator;
     }
 
     @Bean
@@ -50,11 +83,15 @@ public class ShiroConfig {
         return new ShiroSessionListener();
     }
 
+    /**
+     * 配置两个realm
+     */
     @Bean
     public DefaultSecurityManager securityManager() {
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
-        manager.setRealm(authorizingRealm());
+        manager.setRealms(List.of(authorizingRealm(), secondAuthorizingRealm()));
         manager.setSessionManager(sessionManager());
+        manager.setAuthenticator(realmAuthenticator());
         return manager;
     }
 
@@ -80,18 +117,20 @@ public class ShiroConfig {
         // 注册过滤器
         Map<String, Filter> filters = bean.getFilters();
         filters.put("shiroLoginFilter", shiroLoginFilter());
-        filters.put("shiroLogoutFilter", shiroLogoutFilter());
+        // filters.put("shiroLogoutFilter", shiroLogoutFilter());
         // 给不同的路径设置不同的过滤器
         Map<String, String> filterChainMap = MapUtils.putAll(
                 new HashMap<>(16),
                 new String[]{
                         "/login", "shiroLoginFilter",
-                        "/logout", "shiroLogoutFilter",
+                        // "/logout", "shiroLogoutFilter",
                         "/login/getVerifyCode", "anon",
                         "/css/**", "anon",
                         "/img/**", "anon",
                         "/javascript/**", "anon",
                         "/error/**", "anon",
+                        "/student", "roles[student]",
+                        "/teacher", "roles[teacher]",
                         "/**", "authc"
                 });
         bean.setLoginUrl("/login");
@@ -101,7 +140,7 @@ public class ShiroConfig {
         return bean;
     }
 
-    @Bean
+    // @Bean
     public Filter shiroLogoutFilter() {
         return new ShiroLogoutFilter();
     }
