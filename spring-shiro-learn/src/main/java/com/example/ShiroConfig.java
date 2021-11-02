@@ -4,16 +4,19 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy;
 import org.apache.shiro.authc.pam.ModularRealmAuthenticator;
+import org.apache.shiro.cache.CacheManager;
+import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.mgt.RememberMeManager;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.session.SessionListener;
 import org.apache.shiro.session.mgt.DefaultSessionManager;
-import org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO;
 import org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator;
 import org.apache.shiro.session.mgt.eis.SessionDAO;
 import org.apache.shiro.session.mgt.eis.SessionIdGenerator;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.web.mgt.CookieRememberMeManager;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
@@ -21,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.Filter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,7 @@ public class ShiroConfig {
 
     /**
      * 在这里配置密码的加密方式
+     * realm 是有缓存的 CachingRealm 用 CacheManager 实现
      */
     @Bean
     public AuthorizingRealm authorizingRealm() {
@@ -92,6 +97,7 @@ public class ShiroConfig {
         manager.setRealms(List.of(authorizingRealm(), secondAuthorizingRealm()));
         manager.setSessionManager(sessionManager());
         manager.setAuthenticator(realmAuthenticator());
+        manager.setRememberMeManager(rememberMeManager());
         return manager;
     }
 
@@ -178,18 +184,39 @@ public class ShiroConfig {
 
     @Bean
     public SessionDAO sessionDAO() {
-        EnterpriseCacheSessionDAO sessionDAO = new EnterpriseCacheSessionDAO();
+        ShiroSessionDao sessionDAO = new ShiroSessionDao();
         sessionDAO.setActiveSessionsCacheName("cache-name");
         sessionDAO.setSessionIdGenerator(sessionIdGenerator());
         return sessionDAO;
     }
 
+    /**
+     * 缓存管理
+     */
+    @Bean
+    public CacheManager cacheManager() {
+        EhCacheManager manager = new EhCacheManager();
+        manager.setCacheManagerConfigFile("classpath:ehcache.xml");
+        return manager;
+    }
+
+    @Bean
+    public RememberMeManager rememberMeManager() {
+        CookieRememberMeManager manager = new CookieRememberMeManager();
+        manager.setCookie(sessionIdCookie());
+        manager.setCipherKey("----++++....****".getBytes(StandardCharsets.UTF_8));
+        return manager;
+    }
+
+    /**
+     * 记住我的cookie配置
+     */
     @Bean
     public SimpleCookie sessionIdCookie() {
         SimpleCookie simpleCookie = new SimpleCookie("sCookie");
         simpleCookie.setHttpOnly(true);
         simpleCookie.setPath("/");
-        simpleCookie.setMaxAge(-1); // 关闭浏览器后失效
+        simpleCookie.setMaxAge(24 * 60 * 60); // 默认 -1 关闭浏览器后失效
         return simpleCookie;
     }
 
